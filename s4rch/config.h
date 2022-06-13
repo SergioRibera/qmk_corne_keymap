@@ -37,9 +37,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TAPPING_TERM 200
 
 #ifdef RGBLIGHT_ENABLE
-    #undef RGBLED_NUM
-    // #define RGBLIGHT_ANIMATIONS // Enable all animations
-    #define RGBLED_NUM 27
+    /* #undef RGBLED_NUM */
+    /* #define RGBLED_NUM 27 */
+    /* #define RGBLIGHT_ANIMATIONS // Enable all animations */
+    /* #define RGBLIGHT_EFFECT_KNIGHT */
+
+    #define RGBLIGHT_SPLIT
     #define RGBLIGHT_LIMIT_VAL 120
     #define RGBLIGHT_HUE_STEP 10
     #define RGBLIGHT_SAT_STEP 17
@@ -48,6 +51,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // VENDOR_ID => 0x04653
 // PRODUCT_ID => 0x0001
+#define VENDOR_ID 0xFEED
+#define PRODUCT_ID 0x0000
+#define RAW_USAGE_PAGE 0xFF60
+#define RAW_USAGE_ID 0x61
 
 #define NO_ACTION_MACRO
 #define NO_ACTION_FUNCTION

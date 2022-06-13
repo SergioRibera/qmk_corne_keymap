@@ -113,6 +113,8 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 enum via_command_id {
     id_get_keyboard_value                   = 0x01,
     id_set_keyboard_value                   = 0x02,
+    id_get_rgb_value                        = 0x03,
+    id_set_rgb_value                        = 0x04,
     id_unhandled                            = 0xFF,
 };
 
@@ -133,16 +135,64 @@ enum via_lighting_value {
 // process_record_user on line 357
 
 void raw_hid_receive(uint8_t *data, uint8_t length) {
-    /* uint8_t *command_id   = &(data[0]); */
-    /* uint8_t *command_data = &(data[1]); */
-    /* switch (command_id) { */
-    /*     default: */
-    /*         break; */
-    /* } */
+    uint8_t *command_id   = &(data[0]);
+    switch (command_id) {
+        case id_set_rgb_value:
+            rgb_matrix_set_flags(LED_FLAG_NONE);
+            uint8_t index = data[2];
+            uint8_t r     = data[3];
+            uint8_t g     = data[4];
+            uint8_t b     = data[5];
+            switch (data[1]) {
+                // Set one led to color
+                case 1:
+                    rgb_matrix_set_color(index, r, g, b);
+                    break;
+                // set full color
+                case 2:
+                    rgblight_setrgb(r, g, b)
+                    break;
+                // Set one row to color
+                case 3:
+                    switch (index) {
+                        case 1:  // First row
+                            rgblight_setrgb_range(r, g, b, 0, 14);
+                            break;
+                        case 2:  // Second row
+                            rgblight_setrgb_range(r, g, b, 15, 29);
+                            break;
+                        case 3:  // Third row
+                            rgblight_setrgb_range(r, g, b, 30, 43);
+                            break;
+                        case 4:  // Fourth row
+                            rgblight_setrgb_range(r, g, b, 44, 57);
+                            break;
+                        case 5:  // Fifth row
+                            rgblight_setrgb_range(r, g, b, 58, 66);
+                            break;
+                        case 6:  // Bottom underglow
+                            rgblight_setrgb_range(r, g, b, 67, 81);
+                            break;
+                        case 7:  // Right underglow
+                            rgblight_setrgb_range(r, g, b, 82, 86);
+                            break;
+                        case 8:  // Top underglow
+                            rgblight_setrgb_range(r, g, b, 87, 99);
+                            break;
+                        case 9:  // Left underglow
+                            rgblight_setrgb_range(r, g, b, 100, 104);
+                            break;
+                    }
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
 }
 #endif
 
-#ifdef OLED_DRIVER_ENABLE
+#ifdef OLED_ENABLE
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
   if (!is_keyboard_master()) {
     return OLED_ROTATION_180;  // flips the display 180 degrees if offhand
@@ -225,13 +275,14 @@ void oled_render_logo(void) {
     oled_write_P(crkbd_logo, false);
 }
 
-void oled_task_user(void) {
+bool oled_task_user(void) {
     if (is_keyboard_master()) {
         oled_render_layer_state();
         oled_render_keylog();
     } else {
         oled_render_logo();
     }
+    return false;
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
