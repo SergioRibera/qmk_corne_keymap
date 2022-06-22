@@ -139,11 +139,11 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
     switch (command_id) {
         case id_set_rgb_value:
             /* rgb_matrix_set_flags(LED_FLAG_NONE); */
-            uint8_t index = data[2];
-            uint8_t r     = data[3];
-            uint8_t g     = data[4];
-            uint8_t b     = data[5];
             switch (data[1]) {
+                uint8_t index = data[2];
+                uint8_t r     = data[3];
+                uint8_t g     = data[4];
+                uint8_t b     = data[5];
                 // Set one led to color
                 case 1:
                     /* rgb_matrix_set_color(index, r, g, b); */
