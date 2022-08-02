@@ -40,23 +40,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     /* #undef RGBLED_NUM */
     /* #define RGBLED_NUM 27 */
     /* #define RGBLIGHT_ANIMATIONS // Enable all animations */
-    #define  RGBLIGHT_MODE_RAINBOW_MOOD
+    #define RGBLIGHT_EFFECT_RAINBOW_MOOD
+    /* #define RGBLIGHT_MODE_RGB_TEST */
 
-    /* #define RGBLIGHT_SPLIT */
-    #define RGBLIGHT_LIMIT_VAL 120
-    #define RGBLIGHT_HUE_STEP 10
+    /* #define RGBLIGHT_LAYER_BLINK */
+    #define RGBLIGHT_SLEEP
+    #define RGBLIGHT_SPLIT
+    /* #define RGBLIGHT_LIMIT_VAL 120 */
+    /* #define RGBLIGHT_HUE_STEP 10 */
     #define RGBLIGHT_SAT_STEP 17
-    #define RGBLIGHT_VAL_STEP 17
+    /* #define RGBLIGHT_VAL_STEP 17 */
 #endif
 
 // VENDOR_ID => 0x04653
 // PRODUCT_ID => 0x0001
-#undef VENDOR_ID
-#undef PRODUCT_ID
-#define VENDOR_ID 0xFEED
-#define PRODUCT_ID 0x0000
-#define RAW_USAGE_PAGE 0xFF60
-#define RAW_USAGE_ID 0x61
+
+/* #undef VENDOR_ID */
+/* #undef PRODUCT_ID */
+/* #define VENDOR_ID    0x4653 */
+/* #define PRODUCT_ID   0x4D4D */
+
+/* #define DEVICE_VER   0x0001 */
+/* #define MANUFACTURER foostan */
+/* #define PRODUCT      Corne */
 
 #define NO_ACTION_MACRO
 #define NO_ACTION_FUNCTION

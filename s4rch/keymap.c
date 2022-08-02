@@ -18,7 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include QMK_KEYBOARD_H
 #include <stdio.h>
+#ifdef RAW_ENABLE
 #include "raw_hid.h"
+#endif
+
+#ifdef RGB_MATRIX_ENABLE
+#include "rgb_matrix.h"
+#include "config_led.h"
+#endif
 
 #define L_BASE 0
 #define L_LOWER 1
@@ -73,7 +80,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       KC_LCTL,  KC_LT,   KC_GT, XXXXXXX, XXXXXXX, XXXXXXX,                      KC_UNDS, KC_PLUS, KC_LCBR, KC_RCBR, KC_PIPE, KC_TILD,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                       XXXXXXX,   _______,  KC_SPC,     KC_ENT, _______, KC_RALT
+                                       _______,   _______,  KC_SPC,     KC_ENT, _______, KC_RALT
                                       //`--------------------------'  `--------------------------'
   ),
 
@@ -83,9 +90,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       XXXXXXX, LCA(KC_F1), LCA(KC_F2), LCA(KC_F3), LCA(KC_F4), LCA(KC_F7),        KC_LEFT, KC_DOWN, KC_UP, KC_RIGHT, XXXXXXX, KC_LSFT,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
-      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_F12, XXXXXXX,
+      KC_MUTE, KC_VOLD, KC_VOLU, KC_MPRV, KC_MPLY, KC_MNXT,                      KC_BRID, KC_BRIU, XXXXXXX, XXXXXXX, KC_F12, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          _______, XXXXXXX,  KC_SPC,     KC_ENT, XXXXXXX, KC_LGUI 
+                                          _______, XXXXXXX,  KC_SPC,     KC_ENT, MO(L_ADJUST), KC_LGUI 
                                       //`--------------------------'  `--------------------------'
   ),
 
@@ -102,14 +109,53 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   )
 };
 
+#ifdef RGB_MATRIX_ENABLE
 // on layer change, no matter where the change was initiated
 // Then runs keymap's layer change check
-layer_state_t layer_state_set_user(layer_state_t state) {
-  return update_tri_layer_state(state, L_LOWER, L_RAISE, L_ADJUST);
+void update_tri_layer_RGB(uint8_t layer1, uint8_t layer2, uint8_t layer3) {
+    if (IS_LAYER_ON(layer1) && IS_LAYER_ON(layer2) || IS_LAYER_ON(layer2) && IS_LAYER_ON(layer1)) {
+        layer_on(layer3);
+    } else {
+        layer_off(layer3);
+    }
+}
+void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+    uint8_t layer = get_highest_layer(layer_state);
+    if (layer_state_is(L_ADJUST)) {
+        rgb_matrix_sethsv(HSV_OFF);
+        for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
+            for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
+                uint8_t index = g_led_config.matrix_co[row][col];
+
+                if (index >= led_min && index <= led_max && index != NO_LED &&
+                keymap_key_to_keycode(layer, (keypos_t){col,row}) > KC_TRNS) {
+                    rgb_matrix_set_color(index, RGB_PURPLE);
+                }
+            }
+        }
+    } else if (layer_state_is(L_BASE)) {
+        rgb_matrix_sethsv(HSV_PURPLE);
+    } else if (layer_state_is(L_LOWER)) {
+        rgb_matrix_sethsv(HSV_CYAN);
+    } else if (layer_state_is(L_RAISE)) {
+        rgb_matrix_sethsv(HSV_ORANGE);
+    }
+}
+#endif
+
+void keyboard_post_init_user(void) {
+#ifdef RGBLIGHT_ENABLE
+    /* rgblight_enable_noeeprom(); */
+    /* rgblight_sethsv_noeeprom(HSV_PURPLE); */
+    /* rgblight_mode_noeeprom(6); */
+#endif
+    rgb_matrix_sethsv(HSV_PURPLE);
+    /* rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_s4rch_reactive); */
 }
 
 #ifdef RAW_ENABLE
 
+#ifndef VIA_ENABLE
 enum via_command_id {
     id_get_keyboard_value                   = 0x01,
     id_set_keyboard_value                   = 0x02,
@@ -117,6 +163,7 @@ enum via_command_id {
     id_set_rgb_value                        = 0x04,
     id_unhandled                            = 0xFF,
 };
+#endif
 
 #ifdef RGBLIGHT_ENABLE
 enum via_lighting_value {
@@ -130,15 +177,23 @@ enum via_lighting_value {
     id_qmk_rgblight_effect_speed = 0x82,
     id_qmk_rgblight_color        = 0x83,
 };
+
 #endif
 
 // process_record_user on line 357
 
+/* void rgb_set_range(uint8_t *start, uint8_t *end) { */
+/*     for (int i = start; i <= end; i++) { */
+/*         rgb_matrix_set_color(i, r, g, b); */
+/*     } */
+/* } */
+
+#ifndef VIA_ENABLE
 void raw_hid_receive(uint8_t *data, uint8_t length) {
     uint8_t command_id   = data[0];
     switch (command_id) {
         case id_set_rgb_value:
-            /* rgb_matrix_set_flags(LED_FLAG_NONE); */
+            // rgb_matrix_set_flags(LED_FLAG_NONE);
             uint8_t index = data[2];
             uint8_t r     = data[3];
             uint8_t g     = data[4];
@@ -146,44 +201,46 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
             switch (data[1]) {
                 // Set one led to color
                 case 1:
-                    /* rgb_matrix_set_color(index, r, g, b); */
-                    rgblight_setrgb_at(r, g, b, index);
+                    // gb_matrix_set_color(index, r, g, b);
+                    /* rgblight_setrgb_at(r, g, b, index); */
+                    rgb_matrix_set_color(index, r, g, b);
                     break;
                 // set full color
                 case 2:
-                    rgblight_setrgb(r, g, b);
+                    /* rgblight_setrgb(r, g, b); */
+                    rgb_matrix_set_color_all(r, g, b);
                     break;
                 // Set one row to color
                 case 3:
-                    switch (index) {
-                        case 1:  // First row
-                            rgblight_setrgb_range(r, g, b, 0, 14);
-                            break;
-                        case 2:  // Second row
-                            rgblight_setrgb_range(r, g, b, 15, 29);
-                            break;
-                        case 3:  // Third row
-                            rgblight_setrgb_range(r, g, b, 30, 43);
-                            break;
-                        case 4:  // Fourth row
-                            rgblight_setrgb_range(r, g, b, 44, 57);
-                            break;
-                        case 5:  // Fifth row
-                            rgblight_setrgb_range(r, g, b, 58, 66);
-                            break;
-                        case 6:  // Bottom underglow
-                            rgblight_setrgb_range(r, g, b, 67, 81);
-                            break;
-                        case 7:  // Right underglow
-                            rgblight_setrgb_range(r, g, b, 82, 86);
-                            break;
-                        case 8:  // Top underglow
-                            rgblight_setrgb_range(r, g, b, 87, 99);
-                            break;
-                        case 9:  // Left underglow
-                            rgblight_setrgb_range(r, g, b, 100, 104);
-                            break;
-                    }
+                    /* switch (index) { */
+                    /*     case 1:  // First row */
+                    /*         rgblight_setrgb_range(r, g, b, 0, 14); */
+                    /*         break; */
+                    /*     case 2:  // Second row */
+                    /*         rgblight_setrgb_range(r, g, b, 15, 29); */
+                    /*         break; */
+                    /*     case 3:  // Third row */
+                    /*         rgblight_setrgb_range(r, g, b, 30, 43); */
+                    /*         break; */
+                    /*     case 4:  // Fourth row */
+                    /*         rgblight_setrgb_range(r, g, b, 44, 57); */
+                    /*         break; */
+                    /*     case 5:  // Fifth row */
+                    /*         rgblight_setrgb_range(r, g, b, 58, 66); */
+                    /*         break; */
+                    /*     case 6:  // Bottom underglow */
+                    /*         rgblight_setrgb_range(r, g, b, 67, 81); */
+                    /*         break; */
+                    /*     case 7:  // Right underglow */
+                    /*         rgblight_setrgb_range(r, g, b, 82, 86); */
+                    /*         break; */
+                    /*     case 8:  // Top underglow */
+                    /*         rgblight_setrgb_range(r, g, b, 87, 99); */
+                    /*         break; */
+                    /*     case 9:  // Left underglow */
+                    /*         rgblight_setrgb_range(r, g, b, 100, 104); */
+                    /*         break; */
+                    /* } */
                     break;
             }
             break;
@@ -191,6 +248,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
             break;
     }
 }
+#endif
 #endif
 
 #ifdef OLED_ENABLE
@@ -285,11 +343,14 @@ bool oled_task_user(void) {
     }
     return false;
 }
+#endif // OLED_DRIVER_ENABLE
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+#ifdef OLED_ENABLE
     if (record->event.pressed) {
         set_keylog(keycode, record);
     }
+#endif
 #ifdef RAW_ENABLE
     uint8_t data[3];
     data[0] = id_set_keyboard_value;
@@ -306,4 +367,3 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 #endif
     return true;
 }
-#endif // OLED_DRIVER_ENABLE
