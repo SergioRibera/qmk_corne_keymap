@@ -119,37 +119,34 @@ void update_tri_layer_RGB(uint8_t layer1, uint8_t layer2, uint8_t layer3) {
         layer_off(layer3);
     }
 }
-void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
-    uint8_t layer = get_highest_layer(layer_state);
-    if (layer_state_is(L_ADJUST)) {
-        rgb_matrix_sethsv(HSV_OFF);
-        for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
-            for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
-                uint8_t index = g_led_config.matrix_co[row][col];
 
-                if (index >= led_min && index <= led_max && index != NO_LED &&
-                keymap_key_to_keycode(layer, (keypos_t){col,row}) > KC_TRNS) {
-                    rgb_matrix_set_color(index, RGB_PURPLE);
-                }
-            }
-        }
-    } else if (layer_state_is(L_BASE)) {
-        rgb_matrix_sethsv(HSV_PURPLE);
-    } else if (layer_state_is(L_LOWER)) {
-        rgb_matrix_sethsv(HSV_CYAN);
-    } else if (layer_state_is(L_RAISE)) {
-        rgb_matrix_sethsv(HSV_ORANGE);
-    }
-}
+/* void rgb_matrix_indicators_user(void) { */
+/*     uint8_t layer = get_highest_layer(layer_state); */
+/*     if (layer_state_is(L_ADJUST)) { */
+/*         rgb_matrix_sethsv_noeeprom(HSV_OFF); */
+/*         for (uint8_t row = 0; row < MATRIX_ROWS; ++row) { */
+/*             for (uint8_t col = 0; col < MATRIX_COLS; ++col) { */
+/*                 uint8_t index = g_led_config.matrix_co[row][col]; */
+/*      */
+/*                 if (index != NO_LED && keymap_key_to_keycode(layer, (keypos_t){col,row}) > KC_TRNS) { */
+/*                     rgb_matrix_set_color(index, RGB_PURPLE); */
+/*                 } */
+/*             } */
+/*         } */
+/*     } else if (layer_state_is(L_BASE)) { */
+/*         rgb_matrix_sethsv_noeeprom(HSV_PURPLE); */
+/*         rgb_matrix_set_color_all(RGB_PURPLE); */
+/*     } else if (layer_state_is(L_LOWER)) { */
+/*         rgb_matrix_set_color_all(RGB_CYAN); */
+/*     } else if (layer_state_is(L_RAISE)) { */
+/*         rgb_matrix_set_color_all(RGB_ORANGE); */
+/*     } */
+/* } */
 #endif
 
 void keyboard_post_init_user(void) {
-#ifdef RGBLIGHT_ENABLE
-    /* rgblight_enable_noeeprom(); */
-    /* rgblight_sethsv_noeeprom(HSV_PURPLE); */
-    /* rgblight_mode_noeeprom(6); */
-#endif
-    rgb_matrix_sethsv(HSV_PURPLE);
+    rgb_matrix_sethsv_noeeprom(HSV_PURPLE);
+    /* rgb_matrix_set_color_all(RGB_GREEN); */
     /* rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_s4rch_reactive); */
 }
 
@@ -161,6 +158,8 @@ enum via_command_id {
     id_set_keyboard_value                   = 0x02,
     id_get_rgb_value                        = 0x03,
     id_set_rgb_value                        = 0x04,
+
+    id_get_rgb_current_flag                 = 0x00,
     id_unhandled                            = 0xFF,
 };
 #endif
@@ -180,25 +179,28 @@ enum via_lighting_value {
 
 #endif
 
-// process_record_user on line 357
-
-/* void rgb_set_range(uint8_t *start, uint8_t *end) { */
-/*     for (int i = start; i <= end; i++) { */
-/*         rgb_matrix_set_color(i, r, g, b); */
-/*     } */
-/* } */
+void set_led_range(int start, int stop, uint8_t r, uint8_t g, uint8_t b) {
+    for (int i = start; i <= stop; i++) {
+        rgb_matrix_set_color(i, r, g, b);
+    }
+}
 
 #ifndef VIA_ENABLE
 void raw_hid_receive(uint8_t *data, uint8_t length) {
     uint8_t command_id   = data[0];
     switch (command_id) {
         case id_set_rgb_value:
-            // rgb_matrix_set_flags(LED_FLAG_NONE);
+            /* rgb_matrix_set_flags(LED_FLAG_NONE); */
             uint8_t index = data[2];
             uint8_t r     = data[3];
             uint8_t g     = data[4];
             uint8_t b     = data[5];
             switch (data[1]) {
+                // set flag
+                case 0:
+                    rgb_matrix_set_flags(index);
+                    /* rgb_matrix_set_color_all(r, g, b); */
+                    break;
                 // Set one led to color
                 case 1:
                     // gb_matrix_set_color(index, r, g, b);
@@ -208,39 +210,70 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
                 // set full color
                 case 2:
                     /* rgblight_setrgb(r, g, b); */
-                    rgb_matrix_set_color_all(r, g, b);
+                    /* rgb_matrix_set_color_all(r, g, b); */
+                    rgb_matrix_sethsv_noeeprom(r, g, b);
                     break;
                 // Set one row to color
                 case 3:
-                    /* switch (index) { */
-                    /*     case 1:  // First row */
-                    /*         rgblight_setrgb_range(r, g, b, 0, 14); */
-                    /*         break; */
-                    /*     case 2:  // Second row */
-                    /*         rgblight_setrgb_range(r, g, b, 15, 29); */
-                    /*         break; */
-                    /*     case 3:  // Third row */
-                    /*         rgblight_setrgb_range(r, g, b, 30, 43); */
-                    /*         break; */
-                    /*     case 4:  // Fourth row */
-                    /*         rgblight_setrgb_range(r, g, b, 44, 57); */
-                    /*         break; */
-                    /*     case 5:  // Fifth row */
-                    /*         rgblight_setrgb_range(r, g, b, 58, 66); */
-                    /*         break; */
-                    /*     case 6:  // Bottom underglow */
-                    /*         rgblight_setrgb_range(r, g, b, 67, 81); */
-                    /*         break; */
-                    /*     case 7:  // Right underglow */
-                    /*         rgblight_setrgb_range(r, g, b, 82, 86); */
-                    /*         break; */
-                    /*     case 8:  // Top underglow */
-                    /*         rgblight_setrgb_range(r, g, b, 87, 99); */
-                    /*         break; */
-                    /*     case 9:  // Left underglow */
-                    /*         rgblight_setrgb_range(r, g, b, 100, 104); */
-                    /*         break; */
-                    /* } */
+                    switch (index) {
+                        case 1:  // First row
+                            /* rgblight_setrgb_range(r, g, b, 0, 14); */
+                            set_led_range(0, 14, r, g, b);
+                            break;
+                        case 2:  // Second row
+                            /* rgblight_setrgb_range(r, g, b, 15, 29); */
+                            set_led_range(15, 29, r, g, b);
+                            break;
+                        case 3:  // Third row
+                            /* rgblight_setrgb_range(r, g, b, 30, 43); */
+                            set_led_range(30, 43, r, g, b);
+                            break;
+                        case 4:  // Fourth row
+                            /* rgblight_setrgb_range(r, g, b, 44, 57); */
+                            set_led_range(44, 57, r, g, b);
+                            break;
+                        case 5:  // Fifth row
+                            /* rgblight_setrgb_range(r, g, b, 58, 66); */
+                            set_led_range(58, 66, r, g, b);
+                            break;
+                        case 6:  // Bottom underglow
+                            /* rgblight_setrgb_range(r, g, b, 67, 81); */
+                            set_led_range(67, 81, r, g, b);
+                            break;
+                        case 7:  // Right underglow
+                            /* rgblight_setrgb_range(r, g, b, 82, 86); */
+                            set_led_range(82, 86, r, g, b);
+                            break;
+                        case 8:  // Top underglow
+                            /* rgblight_setrgb_range(r, g, b, 87, 99); */
+                            set_led_range(87, 99, r, g, b);
+                            break;
+                        case 9:  // Left underglow
+                            /* rgblight_setrgb_range(r, g, b, 100, 104); */
+                            set_led_range(100, 104, r, g, b);
+                            break;
+                    }
+                    break;
+            }
+            break;
+        case id_get_rgb_value:
+            switch (data[1]) {
+                case id_get_rgb_current_flag:
+                    uint8_t data[1];
+                    /* data[0] = id_set_rgb_value; */
+                    data[0] = rgb_matrix_get_flags();
+                    /* data[2] = rgb_matrix_get_hue(); */
+                    /* data[3] = rgb_matrix_get_sat(); */
+                    /* data[4] = rgb_matrix_get_val(); */
+                    /*
+                     * Send Data:
+                     *      
+                     *      0      =>   Type send [ key, led state ]
+                     *      1      =>   flag
+                     *      2..4   =>   HSV
+                     *
+                     */
+                    raw_hid_send(data, 1);
                     break;
             }
             break;

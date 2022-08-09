@@ -11,9 +11,7 @@ VIA_ENABLE          	= no      	 	# Enable Modify Layout on Runtime
 
 RGBLIGHT_ENABLE     	= no 	 		# Enable WS2812 RGB underlight.
 RGB_MATRIX_ENABLE   	= yes
-RGB_MATRIX_SPLIT_RIGHT  = yes
 RGB_MATRIX_DRIVER       = WS2812
-RGB_MATRIX_CUSTOM_USER  = no
 RAW_ENABLE 	    	= yes     		# Allow cominucate with host
 TAP_DANCE_ENABLE    	= yes     		# Enable Double tap for send other keycode
 OLED_ENABLE         	= no 			# Enable OLED

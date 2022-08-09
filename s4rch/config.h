@@ -20,15 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-//#define USE_MATRIX_I2C
-
-/* Select hand configuration */
-
-/* #define MASTER_LEFT */
 #define MASTER_RIGHT
-// #define EE_HANDS
-
-#define USE_SERIAL_PD2
+#define SPLIT_LAYER_STATE_ENABLE
 
 #define ONESHOT_TAP_TOGGLE 5  /* Tapping this number of times holds the key until tapped once again. */
 #define ONESHOT_TIMEOUT 5000  /* Time (in ms) before the one shot key is released */
@@ -45,7 +38,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     /* #define RGBLIGHT_LAYER_BLINK */
     #define RGBLIGHT_SLEEP
-    #define RGBLIGHT_SPLIT
     /* #define RGBLIGHT_LIMIT_VAL 120 */
     /* #define RGBLIGHT_HUE_STEP 10 */
     #define RGBLIGHT_SAT_STEP 17
@@ -55,10 +47,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // VENDOR_ID => 0x04653
 // PRODUCT_ID => 0x0001
 
-/* #undef VENDOR_ID */
-/* #undef PRODUCT_ID */
-/* #define VENDOR_ID    0x4653 */
-/* #define PRODUCT_ID   0x4D4D */
+#undef VENDOR_ID
+#undef PRODUCT_ID
+#define VENDOR_ID    0x4653
+#define PRODUCT_ID   0x4D4D
 
 /* #define DEVICE_VER   0x0001 */
 /* #define MANUFACTURER foostan */
@@ -67,4 +59,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NO_ACTION_MACRO
 #define NO_ACTION_FUNCTION
 
+#ifdef RAW_ENABLE
+    #define RAW_USAGE_PAGE 0xFF60
+    #define RAW_USAGE_ID 0x61
+#endif
+
+#ifdef OLED_ENABLE
 #define OLED_FONT_H "keyboards/crkbd/lib/glcdfont.c"
+#endif
