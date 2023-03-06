@@ -9,7 +9,8 @@ MOUSEKEY_ENABLE     	= no      	 	# Disable mouse control by keyboard
 EXTRAKERY_ENABLE    	= no      	 	#
 VIA_ENABLE          	= no      	 	# Enable Modify Layout on Runtime
 
-RGBLIGHT_ENABLE     	= no 	 		# Enable WS2812 RGB underlight.
+RGBLIGHT_ENABLE     	= no 			# Enable WS2812 RGB underlight.
+CONSOLE_ENABLE  	= yes
 RGB_MATRIX_ENABLE   	= yes
 RGB_MATRIX_DRIVER       = WS2812
 RAW_ENABLE 	    	= yes     		# Allow cominucate with host

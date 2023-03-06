@@ -27,6 +27,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config_led.h"
 #endif
 
+#ifdef CONSOLE_ENABLE
+#include "print.h"
+#endif
+
 #define L_BASE 0
 #define L_LOWER 1
 #define L_RAISE 2
@@ -76,7 +80,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
       KC_ESC, KC_EXLM,   KC_AT, KC_HASH,  KC_DLR, KC_PERC,                      KC_CIRC, KC_AMPR, KC_ASTR, KC_LPRN, KC_RPRN, KC_BSPC,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
-      KC_TAB, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      KC_MINS,  KC_EQL, KC_LBRC, KC_RBRC, KC_BSLS,  KC_GRV,
+      KC_TAB, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      KC_MINS,  KC_EQL, KC_LBRC, KC_RBRC, KC_BSLS,  EE_CLR,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       KC_LCTL,  KC_LT,   KC_GT, XXXXXXX, XXXXXXX, XXXXXXX,                      KC_UNDS, KC_PLUS, KC_LCBR, KC_RCBR, KC_PIPE, KC_TILD,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
@@ -92,13 +96,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       KC_MUTE, KC_VOLD, KC_VOLU, KC_MPRV, KC_MPLY, KC_MNXT,                      KC_BRID, KC_BRIU, XXXXXXX, XXXXXXX, KC_F12, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          _______, XXXXXXX,  KC_SPC,     KC_ENT, MO(L_ADJUST), KC_LGUI 
+                                          _______, QK_BOOT,  KC_SPC,     KC_ENT, MO(L_ADJUST), KC_LGUI 
                                       //`--------------------------'  `--------------------------'
   ),
 
   [L_ADJUST] = LAYOUT_split_3x6_3(
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
-        RESET, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+        RESET, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      QK_RBT, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       RGB_TOG, RGB_HUI, RGB_SAI, RGB_VAI, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
@@ -109,7 +113,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   )
 };
 
-#ifdef RGB_MATRIX_ENABLE
 // on layer change, no matter where the change was initiated
 // Then runs keymap's layer change check
 void update_tri_layer_RGB(uint8_t layer1, uint8_t layer2, uint8_t layer3) {
@@ -120,6 +123,7 @@ void update_tri_layer_RGB(uint8_t layer1, uint8_t layer2, uint8_t layer3) {
     }
 }
 
+#ifdef RGB_MATRIX_ENABLE
 /* void rgb_matrix_indicators_user(void) { */
 /*     uint8_t layer = get_highest_layer(layer_state); */
 /*     if (layer_state_is(L_ADJUST)) { */
@@ -145,9 +149,16 @@ void update_tri_layer_RGB(uint8_t layer1, uint8_t layer2, uint8_t layer3) {
 #endif
 
 void keyboard_post_init_user(void) {
+#ifdef CONSOLE_ENABLE
+    debug_enable=true;
+    /* debug_matrix=true; */
+    debug_keyboard=true;
+#endif
+#ifdef RGB_MATRIX_ENABLE
     rgb_matrix_sethsv_noeeprom(HSV_PURPLE);
     /* rgb_matrix_set_color_all(RGB_GREEN); */
     /* rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_s4rch_reactive); */
+#endif
 }
 
 #ifdef RAW_ENABLE
@@ -180,14 +191,22 @@ enum via_lighting_value {
 #endif
 
 void set_led_range(int start, int stop, uint8_t r, uint8_t g, uint8_t b) {
+#ifdef RGB_MATRIX_ENABLE
     for (int i = start; i <= stop; i++) {
         rgb_matrix_set_color(i, r, g, b);
     }
+#endif
+#ifdef RGBLIGHT_ENABLE
+    rgblight_setrgb_range(r, g, b, start, stop);
+#endif
 }
 
 #ifndef VIA_ENABLE
 void raw_hid_receive(uint8_t *data, uint8_t length) {
     uint8_t command_id   = data[0];
+#ifdef CONSOLE_ENABLE
+    uprintf("Command Received: 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X", data[0], data[1], data[2], data[3], data[4], data[5], length);
+#endif
     switch (command_id) {
         case id_set_rgb_value:
             /* rgb_matrix_set_flags(LED_FLAG_NONE); */
@@ -203,7 +222,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
                     break;
                 // Set one led to color
                 case 1:
-                    // gb_matrix_set_color(index, r, g, b);
+                    // rgb_matrix_set_color(index, r, g, b);
                     /* rgblight_setrgb_at(r, g, b, index); */
                     rgb_matrix_set_color(index, r, g, b);
                     break;
@@ -258,13 +277,26 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
             break;
         case id_get_rgb_value:
             switch (data[1]) {
-                case id_get_rgb_current_flag:
-                    uint8_t data[1];
-                    /* data[0] = id_set_rgb_value; */
-                    data[0] = rgb_matrix_get_flags();
-                    /* data[2] = rgb_matrix_get_hue(); */
-                    /* data[3] = rgb_matrix_get_sat(); */
-                    /* data[4] = rgb_matrix_get_val(); */
+                /* case id_get_rgb_current_flag: */
+                /*     uint8_t s_data[1]; */
+                /* data[0] = id_set_rgb_value; */
+                /*     s_data[0] = rgb_matrix_get_flags(); */
+                /*      * Send Data: */
+                /*      *       */
+                /*      *      0      =>   Type send [ key, led state ] */
+                /*      *      1      =>   flag */
+                /*      *      2..4   =>   HSV */
+                /*      * */
+                /*     raw_hid_send(s_data, 1); */
+                /*     break; */
+                case id_get_rgb_value:
+                    uint8_t s_data[3];
+                    s_data[0] = rgb_matrix_get_hue();
+                    s_data[1] = rgb_matrix_get_sat();
+                    s_data[2] = rgb_matrix_get_val();
+                    /* s_data[0] = rgblight_get_hue(); */
+                    /* s_data[1] = rgblight_get_sat(); */
+                    /* s_data[2] = rgblight_get_val(); */
                     /*
                      * Send Data:
                      *      
@@ -273,7 +305,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
                      *      2..4   =>   HSV
                      *
                      */
-                    raw_hid_send(data, 1);
+                    raw_hid_send(s_data, 3);
                     break;
             }
             break;
