@@ -7,7 +7,7 @@ BLUETOOTH_ENABLE    	= no      	 	# Enable Bluetooth with the Adafruit EZ-Key HI
 SWAP_HANDS_ENABLE   	= no      	 	# Enable one-hand typing
 MOUSEKEY_ENABLE     	= no      	 	# Disable mouse control by keyboard
 EXTRAKERY_ENABLE    	= no      	 	#
-VIA_ENABLE          	= yes      	 	# Enable Modify Layout on Runtime
+VIA_ENABLE          	= no            # Enable Modify Layout on Runtime
 
 RGBLIGHT_ENABLE     	= no 			# Enable WS2812 RGB underlight.
 # CONSOLE_ENABLE  	    = yes
