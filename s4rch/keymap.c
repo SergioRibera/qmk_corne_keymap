@@ -17,17 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include QMK_KEYBOARD_H
-#include <stdio.h>
-#ifdef RAW_ENABLE
-#include "raw_hid.h"
-#endif
 
 #ifdef RGB_MATRIX_ENABLE
 #include "config_led.h"
-#endif
-
-#ifdef CONSOLE_ENABLE
-#include "print.h"
 #endif
 
 #define L_BASE 0
@@ -111,272 +103,46 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                       //`--------------------------'  `--------------------------'
   )
 };
+// clang-format on
 
 // on layer change, no matter where the change was initiated
 // Then runs keymap's layer change check
 void update_tri_layer_RGB(uint8_t layer1, uint8_t layer2, uint8_t layer3) {
-    if (IS_LAYER_ON(layer1) && IS_LAYER_ON(layer2)) {
-        layer_on(layer3);
-    } else {
-        layer_off(layer3);
+  if (IS_LAYER_ON(layer1) && IS_LAYER_ON(layer2)) {
+    layer_on(layer3);
+    rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
+    rgb_matrix_sethsv_noeeprom(HSV_PURPLE);
+  } else {
+    layer_off(layer3);
+    rgb_matrix_sethsv_noeeprom(HSV_OFF);
+  }
+}
+
+#ifdef RGB_MATRIX_ENABLE
+bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+  hsv_t hsv = {0, 255, 255};
+
+  if (layer_state_is(layer_state, 2)) {
+    hsv = (hsv_t){130, 255, 255};
+  } else {
+    hsv = (hsv_t){30, 255, 255};
+  }
+
+  if (hsv.v > rgb_matrix_get_val()) {
+    hsv.v = rgb_matrix_get_val();
+  }
+  rgb_t rgb = hsv_to_rgb(hsv);
+
+  for (uint8_t i = led_min; i < led_max; i++) {
+    if (HAS_FLAGS(g_led_config.flags[i], 0x01)) { // 0x01 == LED_FLAG_MODIFIER
+      rgb_matrix_set_color(i, rgb.r, rgb.g, rgb.b);
     }
+  }
+  return false;
 }
 #endif
 
 void keyboard_post_init_user(void) {
-#ifdef CONSOLE_ENABLE
-    debug_enable=true;
-    /* debug_matrix=true; */
-    debug_keyboard=true;
-#endif
-    rgb_matrix_sethsv_noeeprom(HSV_PURPLE);
-}
-
-#ifdef RAW_ENABLE
-
-#ifndef VIA_ENABLE
-enum via_command_id {
-    id_get_keyboard_value                   = 0x01,
-    id_set_keyboard_value                   = 0x02,
-    id_get_rgb_value                        = 0x03,
-    id_set_rgb_value                        = 0x04,
-
-    id_get_rgb_current_flag                 = 0x00,
-    id_unhandled                            = 0xFF,
-};
-#endif
-
-#endif
-
 #ifdef RGB_MATRIX_ENABLE
-#ifndef VIA_ENABLE
-void raw_hid_receive(uint8_t *data, uint8_t length) {
-    uint8_t command_id   = data[0];
-#ifdef CONSOLE_ENABLE
-    uprintf("Command Received: 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X", data[0], data[1], data[2], data[3], data[4], data[5], length);
 #endif
-    switch (command_id) {
-        case id_set_rgb_value:
-            /* rgb_matrix_set_flags(LED_FLAG_NONE); */
-            uint8_t index = data[2];
-            uint8_t r     = data[3];
-            uint8_t g     = data[4];
-            uint8_t b     = data[5];
-            switch (data[1]) {
-                // set flag
-                case 0:
-                    rgb_matrix_set_flags(index);
-                    /* rgb_matrix_set_color_all(r, g, b); */
-                    break;
-                // Set one led to color
-                case 1:
-                    // rgb_matrix_set_color(index, r, g, b);
-                    /* rgblight_setrgb_at(r, g, b, index); */
-                    rgb_matrix_set_color(index, r, g, b);
-                    break;
-                // set full color
-                case 2:
-                    /* rgblight_setrgb(r, g, b); */
-                    /* rgb_matrix_set_color_all(r, g, b); */
-                    rgb_matrix_sethsv_noeeprom(r, g, b);
-                    break;
-                // Set one row to color
-                case 3:
-                    switch (index) {
-                        case 1:  // First row
-                            /* rgblight_setrgb_range(r, g, b, 0, 14); */
-                            set_led_range(0, 14, r, g, b);
-                            break;
-                        case 2:  // Second row
-                            /* rgblight_setrgb_range(r, g, b, 15, 29); */
-                            set_led_range(15, 29, r, g, b);
-                            break;
-                        case 3:  // Third row
-                            /* rgblight_setrgb_range(r, g, b, 30, 43); */
-                            set_led_range(30, 43, r, g, b);
-                            break;
-                        case 4:  // Fourth row
-                            /* rgblight_setrgb_range(r, g, b, 44, 57); */
-                            set_led_range(44, 57, r, g, b);
-                            break;
-                        case 5:  // Fifth row
-                            /* rgblight_setrgb_range(r, g, b, 58, 66); */
-                            set_led_range(58, 66, r, g, b);
-                            break;
-                        case 6:  // Bottom underglow
-                            /* rgblight_setrgb_range(r, g, b, 67, 81); */
-                            set_led_range(67, 81, r, g, b);
-                            break;
-                        case 7:  // Right underglow
-                            /* rgblight_setrgb_range(r, g, b, 82, 86); */
-                            set_led_range(82, 86, r, g, b);
-                            break;
-                        case 8:  // Top underglow
-                            /* rgblight_setrgb_range(r, g, b, 87, 99); */
-                            set_led_range(87, 99, r, g, b);
-                            break;
-                        case 9:  // Left underglow
-                            /* rgblight_setrgb_range(r, g, b, 100, 104); */
-                            set_led_range(100, 104, r, g, b);
-                            break;
-                    }
-                    break;
-            }
-            break;
-        case id_get_rgb_value:
-            switch (data[1]) {
-                /* case id_get_rgb_current_flag: */
-                /*     uint8_t s_data[1]; */
-                /* data[0] = id_set_rgb_value; */
-                /*     s_data[0] = rgb_matrix_get_flags(); */
-                /*      * Send Data: */
-                /*      *       */
-                /*      *      0      =>   Type send [ key, led state ] */
-                /*      *      1      =>   flag */
-                /*      *      2..4   =>   HSV */
-                /*      * */
-                /*     raw_hid_send(s_data, 1); */
-                /*     break; */
-                case id_get_rgb_value:
-                    uint8_t s_data[3];
-                    s_data[0] = rgb_matrix_get_hue();
-                    s_data[1] = rgb_matrix_get_sat();
-                    s_data[2] = rgb_matrix_get_val();
-                    /* s_data[0] = rgblight_get_hue(); */
-                    /* s_data[1] = rgblight_get_sat(); */
-                    /* s_data[2] = rgblight_get_val(); */
-                    /*
-                     * Send Data:
-                     *      
-                     *      0      =>   Type send [ key, led state ]
-                     *      1      =>   flag
-                     *      2..4   =>   HSV
-                     *
-                     */
-                    raw_hid_send(s_data, 3);
-                    break;
-            }
-            break;
-        default:
-            break;
-    }
-}
-#endif
-#endif
-
-#ifdef OLED_ENABLE
-oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-  if (!is_keyboard_master()) {
-    return OLED_ROTATION_180;  // flips the display 180 degrees if offhand
-  }
-  return rotation;
-}
-
-
-void oled_render_layer_state(void) {
-    oled_write_P(PSTR("Layer: "), false);
-    switch (layer_state) {
-        case L_BASE:
-            oled_write_ln_P(PSTR("Default"), false);
-            break;
-        case L_LOWER:
-            oled_write_ln_P(PSTR("Lower"), false);
-            break;
-        case L_RAISE:
-            oled_write_ln_P(PSTR("Raise"), false);
-            break;
-        case L_ADJUST:
-        case L_ADJUST|L_LOWER:
-        case L_ADJUST|L_RAISE:
-        case L_ADJUST|L_LOWER|L_RAISE:
-            oled_write_ln_P(PSTR("Adjust"), false);
-            break;
-    }
-}
-
-
-char keylog_str[24] = {};
-
-const char code_to_name[60] = {
-    ' ', ' ', ' ', ' ', 'a', 'b', 'c', 'd', 'e', 'f',
-    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
-    'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-    'R', 'E', 'B', 'T', '_', '-', '=', '[', ']', '\\',
-    '#', ';', '\'', '`', ',', '.', '/', ' ', ' ', ' '};
-
-void set_keylog(uint16_t keycode, keyrecord_t *record) {
-    char name = ' ';
-    if ((keycode >= QK_MOD_TAP && keycode <= QK_MOD_TAP_MAX) ||
-            (keycode >= QK_LAYER_TAP && keycode <= QK_LAYER_TAP_MAX)) { keycode = keycode & 0xFF; }
-    if (keycode < 60) {
-        name = code_to_name[keycode];
-    }
-
-    // update keylog
-    snprintf(keylog_str, sizeof(keylog_str), "%dx%d, k%2d : %c",
-            record->event.key.row, record->event.key.col,
-            keycode, name);
-}
-
-void oled_render_keylog(void) {
-    oled_write(keylog_str, false);
-}
-
-void render_bootmagic_status(bool status) {
-    /* Show Ctrl-Gui Swap options */
-    static const char PROGMEM logo[][2][3] = {
-        {{0x97, 0x98, 0}, {0xb7, 0xb8, 0}},
-        {{0x95, 0x96, 0}, {0xb5, 0xb6, 0}},
-    };
-    if (status) {
-        oled_write_ln_P(logo[0][0], false);
-        oled_write_ln_P(logo[0][1], false);
-    } else {
-        oled_write_ln_P(logo[1][0], false);
-        oled_write_ln_P(logo[1][1], false);
-    }
-}
-
-void oled_render_logo(void) {
-    static const char PROGMEM crkbd_logo[] = {
-        0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f, 0x90, 0x91, 0x92, 0x93, 0x94,
-        0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf, 0xb0, 0xb1, 0xb2, 0xb3, 0xb4,
-        0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf, 0xd0, 0xd1, 0xd2, 0xd3, 0xd4,
-        0};
-    oled_write_P(crkbd_logo, false);
-}
-
-bool oled_task_user(void) {
-    if (is_keyboard_master()) {
-        oled_render_layer_state();
-        oled_render_keylog();
-    } else {
-        oled_render_logo();
-    }
-    return false;
-}
-#endif // OLED_DRIVER_ENABLE
-
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-#ifdef OLED_ENABLE
-    if (record->event.pressed) {
-        set_keylog(keycode, record);
-    }
-#endif
-#ifdef RAW_ENABLE
-    uint8_t data[3];
-    data[0] = id_set_keyboard_value;
-    data[1] = record->event.pressed ? 1 : 0;
-    data[2] = keycode >> 8;
-    /*
-     * Send Data:
-     *      
-     *      0      =>   Type send [ key, led state ]
-     *      1..n   =>   values
-     *
-     */
-    raw_hid_send(data, 3);
-#endif
-    return true;
 }
