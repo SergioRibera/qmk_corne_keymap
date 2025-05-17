@@ -29,22 +29,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TAPPING_FORCE_HOLD
 #define TAPPING_TERM 200
 
-#ifdef RGBLIGHT_ENABLE
-    /* #define RGBLIGHT_SPLIT */
-    /* #undef RGBLED_NUM */
-    /* #define RGBLED_NUM 27 */
-    /* #define RGBLIGHT_ANIMATIONS // Enable all animations */
-    // #define RGBLIGHT_EFFECT_RAINBOW_MOOD
-    /* #define RGBLIGHT_MODE_RGB_TEST */
-
-    /* #define RGBLIGHT_LAYER_BLINK */
-    /* #define RGBLIGHT_SLEEP */
-    /* #define RGBLIGHT_LIMIT_VAL 120 */
-    /* #define RGBLIGHT_HUE_STEP 10 */
-    #define RGBLIGHT_SAT_STEP 17
-    /* #define RGBLIGHT_VAL_STEP 17 */
-#endif
-
 // VENDOR_ID => 0x04653
 // PRODUCT_ID => 0x0001
 

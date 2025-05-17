@@ -23,7 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #ifdef RGB_MATRIX_ENABLE
-#include "rgb_matrix.h"
 #include "config_led.h"
 #endif
 
@@ -122,30 +121,6 @@ void update_tri_layer_RGB(uint8_t layer1, uint8_t layer2, uint8_t layer3) {
         layer_off(layer3);
     }
 }
-
-#ifdef RGB_MATRIX_ENABLE
-/* void rgb_matrix_indicators_user(void) { */
-/*     uint8_t layer = get_highest_layer(layer_state); */
-/*     if (layer_state_is(L_ADJUST)) { */
-/*         rgb_matrix_sethsv_noeeprom(HSV_OFF); */
-/*         for (uint8_t row = 0; row < MATRIX_ROWS; ++row) { */
-/*             for (uint8_t col = 0; col < MATRIX_COLS; ++col) { */
-/*                 uint8_t index = g_led_config.matrix_co[row][col]; */
-/*      */
-/*                 if (index != NO_LED && keymap_key_to_keycode(layer, (keypos_t){col,row}) > KC_TRNS) { */
-/*                     rgb_matrix_set_color(index, RGB_PURPLE); */
-/*                 } */
-/*             } */
-/*         } */
-/*     } else if (layer_state_is(L_BASE)) { */
-/*         rgb_matrix_sethsv_noeeprom(HSV_PURPLE); */
-/*         rgb_matrix_set_color_all(RGB_PURPLE); */
-/*     } else if (layer_state_is(L_LOWER)) { */
-/*         rgb_matrix_set_color_all(RGB_CYAN); */
-/*     } else if (layer_state_is(L_RAISE)) { */
-/*         rgb_matrix_set_color_all(RGB_ORANGE); */
-/*     } */
-/* } */
 #endif
 
 void keyboard_post_init_user(void) {
@@ -154,11 +129,7 @@ void keyboard_post_init_user(void) {
     /* debug_matrix=true; */
     debug_keyboard=true;
 #endif
-#ifdef RGB_MATRIX_ENABLE
     rgb_matrix_sethsv_noeeprom(HSV_PURPLE);
-    /* rgb_matrix_set_color_all(RGB_GREEN); */
-    /* rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_s4rch_reactive); */
-#endif
 }
 
 #ifdef RAW_ENABLE
@@ -175,32 +146,9 @@ enum via_command_id {
 };
 #endif
 
-#ifdef RGBLIGHT_ENABLE
-enum via_lighting_value {
-    // QMK BACKLIGHT
-    id_qmk_backlight_brightness = 0x09,
-    id_qmk_backlight_effect     = 0x0A,
-
-    // QMK RGBLIGHT
-    id_qmk_rgblight_brightness   = 0x80,
-    id_qmk_rgblight_effect       = 0x81,
-    id_qmk_rgblight_effect_speed = 0x82,
-    id_qmk_rgblight_color        = 0x83,
-};
-
 #endif
 
-void set_led_range(int start, int stop, uint8_t r, uint8_t g, uint8_t b) {
 #ifdef RGB_MATRIX_ENABLE
-    for (int i = start; i <= stop; i++) {
-        rgb_matrix_set_color(i, r, g, b);
-    }
-#endif
-#ifdef RGBLIGHT_ENABLE
-    rgblight_setrgb_range(r, g, b, start, stop);
-#endif
-}
-
 #ifndef VIA_ENABLE
 void raw_hid_receive(uint8_t *data, uint8_t length) {
     uint8_t command_id   = data[0];
