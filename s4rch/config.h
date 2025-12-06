@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#define MASTER_RIGHT
+#define SPLIT_USB_DETECT
 #define SPLIT_LAYER_STATE_ENABLE
 
 /* Tapping this number of times holds the key until tapped once again. */
