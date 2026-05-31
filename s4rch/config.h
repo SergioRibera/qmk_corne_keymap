@@ -39,6 +39,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NO_ACTION_MACRO
 #define NO_ACTION_FUNCTION
 
+#define RGB_MATRIX_TIMEOUT 900000
+#define RGB_MATRIX_SLEEP
+
 #ifdef OLED_ENABLE
 #define OLED_FONT_H "keyboards/crkbd/lib/glcdfont.c"
 #endif

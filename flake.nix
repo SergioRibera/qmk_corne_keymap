@@ -1,43 +1,108 @@
 {
-  description = "Flake for building vial-qmk firmware";
+  description = "Flake for building QMK firmware for crkbd/s4rch";
 
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
-  # The vial fork of qmk, stores the keyboard config in on-keyboard memory, and
-  # supports the `Vial` GUI key map config app.
+  inputs.keymap-drawer = {
+    url = "github:caksoylar/keymap-drawer";
+    flake = false;
+  };
+
   inputs.qmk-src = {
     url = "git+https://github.com/qmk/qmk_firmware.git?submodules=1";
     flake = false;
   };
 
-  outputs = { nixpkgs, flake-utils, qmk-src, ... }:
+  outputs = { nixpkgs, flake-utils, keymap-drawer, qmk-src, ... }:
     flake-utils.lib.eachDefaultSystem (system:
     let
       pkgs = import nixpkgs { inherit system; };
+      python = pkgs.python3;
+      pythonPkgs = python.pkgs;
 
-      preparedQmk = pkgs.runCommand "qmk-with-keymap" {
-        nativeBuildInputs = [ pkgs.rsync ];
-      } ''
+      tree-sitter-devicetree = pythonPkgs.buildPythonPackage rec {
+        pname = "tree_sitter_devicetree";
+        version = "0.14.1";
+        pyproject = true;
+        build-system = [ pythonPkgs.setuptools ];
+        src = pythonPkgs.fetchPypi {
+          inherit pname version;
+          sha256 = "2584a68a01ca75abb8da6020dce3d9e8c77504fa492bbac95d1c76e8d4bf83a2";
+        };
+        doCheck = false;
+      };
+
+      keymap-drawer-app = pythonPkgs.buildPythonApplication {
+        pname = "keymap-drawer";
+        version = "unstable";
+        src = keymap-drawer;
+        format = "pyproject";
+        nativeBuildInputs = [ pythonPkgs.poetry-core ];
+        propagatedBuildInputs = with pythonPkgs; [
+          pydantic
+          pydantic-settings
+          pcpp
+          pyyaml
+          platformdirs
+          tree-sitter
+          tree-sitter-devicetree
+          pyparsing
+        ];
+        doCheck = false;
+      };
+
+      preparedQmk = pkgs.runCommand "qmk-with-keymap" { } ''
         mkdir -p $out
-        rsync -a ${qmk-src}/ $out/
-        chmod -R +w $out
-
+        cp -r ${qmk-src}/. $out/
+        chmod -R u+w $out
         mkdir -p $out/keyboards/crkbd/keymaps/s4rch
-        cp -r ${./s4rch}/* $out/keyboards/crkbd/keymaps/s4rch/
+        cp -r ${./s4rch}/. $out/keyboards/crkbd/keymaps/s4rch/
       '';
+
+      generate-svg = pkgs.writeShellApplication {
+        name = "generate-keymap-svg";
+        runtimeInputs = [
+          pkgs.qmk
+          keymap-drawer-app
+          pkgs.coreutils
+        ];
+        text = ''
+          set -euo pipefail
+
+          out_dir="''${OUT_DIR:-$PWD}"
+          out_svg="$out_dir/.github/keymap.svg"
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+
+          export QMK_HOME="${preparedQmk}"
+
+          echo "==> qmk c2json (kb=crkbd/rev1 km=s4rch)"
+          (cd "$QMK_HOME" && qmk c2json -kb crkbd/rev1 -km s4rch -o "$tmp/keymap.json")
+
+          echo "==> keymap parse"
+          keymap parse \
+            -c 10 \
+            -l Base Lower Raise Minecraft Adjust \
+            -q "$tmp/keymap.json" \
+            > "$tmp/keymap.yaml"
+
+          echo "==> keymap draw"
+          keymap draw "$tmp/keymap.yaml" -o "$out_svg"
+
+          echo "OK: $out_svg"
+        '';
+      };
 
       qmk-build = pkgs.writeShellApplication {
         name = "qmk-build";
-        runtimeInputs = with pkgs; [ gnumake ];
+        runtimeInputs = [ pkgs.gnumake ];
         text = ''
-          if [ -z "$KEYBOARD" ]; then
-            echo "ERROR: KEYBOARD environment variable not set"
-            echo "Example: export KEYBOARD=crkbd/rev1"
-            exit 1
-          fi
+          set -euo pipefail
+          KEYBOARD="''${KEYBOARD:-crkbd/rev1}"
+          KEYMAP="''${KEYMAP:-s4rch}"
 
-          echo "Compiling $KEYBOARD with keymap $KEYMAP ..."
+          echo "Compiling $KEYBOARD:$KEYMAP..."
           make -C ${preparedQmk} \
             QMK_HOME=${preparedQmk} \
             BUILD_DIR="$PWD/.build" \
@@ -48,15 +113,13 @@
 
       qmk-flash = pkgs.writeShellApplication {
         name = "qmk-flash";
-        runtimeInputs = with pkgs; [ gnumake ];
+        runtimeInputs = [ pkgs.gnumake ];
         text = ''
-          if [ -z "$KEYBOARD" ]; then
-            echo "ERROR: KEYBOARD environment variable not set"
-            echo "Example: export KEYBOARD=crkbd/rev1"
-            exit 1
-          fi
+          set -euo pipefail
+          KEYBOARD="''${KEYBOARD:-crkbd/rev1}"
+          KEYMAP="''${KEYMAP:-s4rch}"
 
-          echo "Flashing $KEYBOARD with keymap $KEYMAP..."
+          echo "Flashing $KEYBOARD:$KEYMAP..."
           make -C ${preparedQmk} \
             QMK_HOME=${preparedQmk} \
             BUILD_DIR="$PWD/.build" \
@@ -83,11 +146,13 @@
           qmk-build
           qmk-flash
           qmk-clean
+          generate-svg
           pkgs.qmk
           pkgs.dfu-programmer
           pkgs.dfu-util
           pkgs.avrdude
-
+          python
+          keymap-drawer-app
           pkgs.clang-tools
         ];
 
@@ -95,38 +160,24 @@
           echo ""
           echo "QMK environment is ready!"
           echo ""
-          echo "Keyboard set to: crkbd/rev1"
-          echo "Keymap set to: s4rch"
+          echo "Keyboard: $KEYBOARD"
+          echo "Keymap:   $KEYMAP"
           echo ""
-          echo "Available Commands:"
-          echo "  qmk-build    - Compile firmware"
-          echo "  qmk-flash    - Compile and flash"
-          echo "  qmk-clean    - Clean build files"
-          echo ""
-          echo "To change keyboard/keymap:"
-          echo "  export KEYBOARD=<new_keyboard>"
-          echo "  export KEYMAP=<new_keymap>"
+          echo "Commands:"
+          echo "  qmk-build           - Compile firmware"
+          echo "  qmk-flash           - Compile and flash"
+          echo "  qmk-clean           - Clean build files"
+          echo "  generate-keymap-svg - Generate keymap.svg from keymap.c"
           echo ""
         '';
       };
 
       apps = {
-        default = {
-          type = "app";
-          program = "${qmk-build}/bin/qmk-build";
-        };
-        build = {
-          type = "app";
-          program = "${qmk-build}/bin/qmk-build";
-        };
-        flash = {
-          type = "app";
-          program = "${qmk-flash}/bin/qmk-flash";
-        };
-        clean = {
-          type = "app";
-          program = "${qmk-clean}/bin/qmk-clean";
-        };
+        default = { type = "app"; program = "${qmk-build}/bin/qmk-build"; };
+        build   = { type = "app"; program = "${qmk-build}/bin/qmk-build"; };
+        flash   = { type = "app"; program = "${qmk-flash}/bin/qmk-flash"; };
+        clean   = { type = "app"; program = "${qmk-clean}/bin/qmk-clean"; };
+        svg     = { type = "app"; program = "${generate-svg}/bin/generate-keymap-svg"; };
       };
     });
 }

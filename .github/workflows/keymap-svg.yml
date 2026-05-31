@@ -1,0 +1,53 @@
+name: Update keymap SVG
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "s4rch/**"
+      - "flake.nix"
+      - "flake.lock"
+      - ".github/workflows/keymap-svg.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: keymap-svg-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  draw:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            experimental-features = nix-command flakes
+
+      - name: Magic Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Generate keymap SVG
+        run: nix run .#svg
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet -- keymap.svg; then
+            echo "keymap.svg unchanged, nothing to commit."
+            exit 0
+          fi
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add keymap.svg
+          git commit -m "chore: update keymap.svg [skip ci]"
+          git push

@@ -18,13 +18,29 @@
         "type": "github"
       }
     },
+    "keymap-drawer": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777692885,
+        "narHash": "sha256-alCN5F5UZZVUsSXUsFZ/nA57iSNDKCnaOy1VUTEWgYk=",
+        "owner": "caksoylar",
+        "repo": "keymap-drawer",
+        "rev": "3a4ca7e060a54ba700d3e7b6a43cb0b9cec347d2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "caksoylar",
+        "repo": "keymap-drawer",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1747179050,
-        "narHash": "sha256-qhFMmDkeJX9KJwr5H32f1r7Prs7XbQWtO0h3V0a0rFY=",
+        "lastModified": 1779560665,
+        "narHash": "sha256-tpyBcxPpcQb8ukyNF7DoCwfSY3VPsxHoYwj00Cayv5o=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "adaa24fbf46737f3f1b5497bf64bae750f82942e",
+        "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
         "type": "github"
       },
       "original": {
@@ -37,11 +53,11 @@
     "qmk-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1747411731,
-        "narHash": "sha256-KqLOrqLjZOTETrk19Vlqz/uIrOttVkn+hQhRz19C6bI=",
+        "lastModified": 1779938421,
+        "narHash": "sha256-Y30zKlP+wSFwoMmd6o1plseVB3GE1faj9fD/heTMbOE=",
         "ref": "refs/heads/master",
-        "rev": "40d0de39b7ac28ee929729b17e938b98e73db444",
-        "revCount": 28582,
+        "rev": "5b630f7a080eedd3e2fad6808b8fb4b497e8a06e",
+        "revCount": 29438,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/qmk/qmk_firmware.git"
@@ -55,6 +71,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "keymap-drawer": "keymap-drawer",
         "nixpkgs": "nixpkgs",
         "qmk-src": "qmk-src"
       }
